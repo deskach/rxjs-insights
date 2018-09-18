@@ -1,7 +1,7 @@
 import {Component, OnInit} from '@angular/core';
 import {Course} from "../model/course";
-import {interval, Observable, of, timer} from 'rxjs';
-import {catchError, delayWhen, map, retryWhen, shareReplay, tap} from 'rxjs/operators';
+import {interval, Observable, of, throwError, timer} from 'rxjs';
+import {catchError, delayWhen, finalize, map, retryWhen, shareReplay, tap} from 'rxjs/operators';
 import {createHttpObservable} from '../common/util';
 
 
@@ -12,22 +12,30 @@ import {createHttpObservable} from '../common/util';
 })
 export class HomeComponent implements OnInit {
 
-  beginnerCourses: Course[];
-  advancedCourses: Course[];
-
-  constructor() {
-
-  }
-
-  setCourses(courses: Course[]) {
-    this.beginnerCourses = courses.filter(course => course.category === 'BEGINNER');
-    this.advancedCourses = courses.filter(course => course.category === 'ADVANCED');
-  }
+  beginnerCourses: Observable<Course[]>;
+  advancedCourses: Observable<Course[]>;
 
   ngOnInit() {
     const http$ = createHttpObservable('/api/courses');
-    const courses$ = http$.pipe(map(res => res['payload']));
 
-    courses$.subscribe(this.setCourses, console.error, () => console.log('completed'));
+    const courses$ = http$.pipe(
+      catchError(e => {
+        console.log(`Error occurred ${e}`);
+
+        return throwError(e);
+      }),
+      tap(() => console.log('HTTP request executed')),
+      map(res => res['payload']),
+      shareReplay(),
+      finalize(() => console.log('Finalized.'))
+    );
+
+    this.beginnerCourses = courses$.pipe(
+      map((courses: Course[]) => courses.filter(course => course.category === 'BEGINNER'))
+    );
+
+    this.advancedCourses = courses$.pipe(
+      map((courses: Course[]) => courses.filter(course => course.category === 'ADVANCED'))
+    );
   }
 }
