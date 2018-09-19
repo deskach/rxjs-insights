@@ -24,10 +24,10 @@ export class HomeComponent implements OnInit {
 
         return throwError(e);
       }),
+      finalize(() => console.log('Finalized.')),
       tap(() => console.log('HTTP request executed')),
       map(res => res['payload']),
       shareReplay(),
-      finalize(() => console.log('Finalized.'))
     );
 
     this.beginnerCourses = courses$.pipe(
