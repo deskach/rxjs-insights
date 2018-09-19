@@ -4,7 +4,7 @@ import {Course} from "../model/course";
 import {FormBuilder, Validators, FormGroup} from "@angular/forms";
 import * as moment from 'moment';
 import {fromEvent} from 'rxjs';
-import {concatMap, distinctUntilChanged, exhaustMap, filter, mergeMap} from 'rxjs/operators';
+import {concatMap, distinctUntilChanged, exhaustMap, filter, mergeMap, tap} from 'rxjs/operators';
 import {fromPromise} from 'rxjs/internal-compatibility';
 
 @Component({
@@ -12,9 +12,10 @@ import {fromPromise} from 'rxjs/internal-compatibility';
     templateUrl: './course-dialog.component.html',
     styleUrls: ['./course-dialog.component.css']
 })
-export class CourseDialogComponent implements OnInit, AfterViewInit {
+export class CourseDialogComponent implements AfterViewInit {
 
     form: FormGroup;
+
     course:Course;
 
     @ViewChild('saveButton') saveButton: ElementRef;
@@ -37,15 +38,8 @@ export class CourseDialogComponent implements OnInit, AfterViewInit {
 
     }
 
-    ngOnInit() {
-
-
-
-    }
-
-
-
     ngAfterViewInit() {
+
 
 
     }
@@ -55,5 +49,6 @@ export class CourseDialogComponent implements OnInit, AfterViewInit {
     close() {
         this.dialogRef.close();
     }
+
 
 }

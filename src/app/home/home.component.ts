@@ -1,7 +1,7 @@
 import {Component, OnInit} from '@angular/core';
 import {Course} from "../model/course";
-import {interval, Observable, of, throwError, timer} from 'rxjs';
-import {catchError, delayWhen, finalize, map, retryWhen, shareReplay, tap} from 'rxjs/operators';
+import {interval, noop, Observable, of, throwError, timer} from 'rxjs';
+import {catchError, delay, delayWhen, finalize, map, retryWhen, shareReplay, tap} from 'rxjs/operators';
 import {createHttpObservable} from '../common/util';
 
 
@@ -12,30 +12,38 @@ import {createHttpObservable} from '../common/util';
 })
 export class HomeComponent implements OnInit {
 
-  beginnerCourses: Observable<Course[]>;
-  advancedCourses: Observable<Course[]>;
+    beginnerCourses$: Observable<Course[]>;
 
-  ngOnInit() {
-    const http$ = createHttpObservable('/api/courses');
+    advancedCourses$: Observable<Course[]>;
 
-    const courses$ = http$.pipe(
-      catchError(e => {
-        console.log(`Error occurred ${e}`);
+    ngOnInit() {
 
-        return throwError(e);
-      }),
-      finalize(() => console.log('Finalized.')),
-      tap(() => console.log('HTTP request executed')),
-      map(res => res['payload']),
-      shareReplay(),
-    );
+        const http$ = createHttpObservable('/api/courses');
 
-    this.beginnerCourses = courses$.pipe(
-      map((courses: Course[]) => courses.filter(course => course.category === 'BEGINNER'))
-    );
+        const courses$: Observable<Course[]> = http$
+            .pipe(
+                tap(() => console.log("HTTP request executed")),
+                map(res => Object.values(res["payload"]) ),
+                shareReplay(),
+                retryWhen(errors =>
+                    errors.pipe(
+                    delayWhen(() => timer(2000)
+                    )
+                ) )
+            );
 
-    this.advancedCourses = courses$.pipe(
-      map((courses: Course[]) => courses.filter(course => course.category === 'ADVANCED'))
-    );
-  }
+        this.beginnerCourses$ = courses$
+            .pipe(
+                map(courses => courses
+                    .filter(course => course.category == 'BEGINNER'))
+            );
+
+        this.advancedCourses$ = courses$
+            .pipe(
+                map(courses => courses
+                    .filter(course => course.category == 'ADVANCED'))
+            );
+
+    }
+
 }
